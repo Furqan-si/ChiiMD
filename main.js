@@ -1,6 +1,8 @@
 //process.env['NODE_TLS_REJECT_UNAUTHORIZED'] = '0';
 import './config.js';
+import { EventEmitter } from 'events';
 
+EventEmitter.setMaxListeners(1);
 import { createRequire } from "module"; // Bring in the ability to create the 'require' method
 import path, { join } from 'path'
 import { fileURLToPath, pathToFileURL } from 'url'
@@ -57,7 +59,7 @@ loadDatabase()
 
 const { state, saveCreds } = await useMultiFileAuthState('sessions')
 const { version } = await fetchLatestBaileysVersion()
-const connectionOptions = ({
+const connectionOptions = {
     auth: {
         creds: state.creds,
         keys: makeCacheableSignalKeyStore(
@@ -70,13 +72,13 @@ const connectionOptions = ({
     browser: Browsers.ubuntu('Edge'),
     generateHighQualityLinkPreview: true,
     syncFullHistory: false,
-    shouldSyncHistoryMessage: () => true,
+    shouldSyncHistoryMessage: () => false,
     markOnlineOnConnect: true,
     connectTimeoutMs: 60_000,
 	keepAliveIntervalMs: 30_000,
 	retryRequestDelayMs: 250,
 	maxMsgRetryCount: 5
-})
+}
 
 global.conn = makeWASocket(connectionOptions)
 
@@ -108,6 +110,7 @@ if (fs.existsSync('./sessions/creds.json') && !conn.authState.creds.registered) 
 
 async function connectionUpdate(update) {
   const { receivedPendingNotifications, connection, lastDisconnect, isOnline, isNewLogin } = update;
+  global.stopped = connection
 
   if (connection == 'connecting') {
     console.log(chalk.redBright('⚡ Mengaktifkan Bot, Mohon tunggu sebentar...'));
@@ -289,6 +292,26 @@ async function _quickTest() {
   if (s.ffmpeg && !s.ffmpegWebp) conn.logger.warn('Stickers may not animated without libwebp on ffmpeg (--enable-ibwebp while compiling ffmpeg)')
   if (!s.convert && !s.magick && !s.gm) conn.logger.warn('Stickers may not work without imagemagick if libwebp on ffmpeg doesnt isntalled (pkg install imagemagick)')
 }
+
+/*
+setInterval(async () => {
+    if (stopped === 'close' && conn.authState.creds.registered) return;
+    fs.readdir("./sessions", async function(err, files) {
+        if (err) {
+            console.log('Unable to scan directory: ' + err);
+        }
+        let filteredArray = await files.filter(item => item.startsWith("pre-key") || item.startsWith("sender-key") || item.startsWith("device-list") || item.startsWith("lid-mapping") || item.startsWith("session-") || item.startsWith("app-state"))
+        if (filteredArray.length == 0) return
+
+        console.log(`Menghapus ${filteredArray.length} file sessions...`)
+        filteredArray.forEach(function(file) {
+            fs.unlinkSync(`./sessions/${file}`)
+        });
+        console.log("Berhasil menghapus semua sampah di folder session")
+    });
+}, 2 * 60 * 60 * 1000);
+*/
+
 
 _quickTest()
   .then(() => conn.logger.info('☑️ Quick Test Done'))

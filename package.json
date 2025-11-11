@@ -37,7 +37,7 @@
   "dependencies": {
     "awesome-phonenumber": "^2.68.0",
     "axios": "^1.6.0",
-    "baileys": "^7.0.0-rc.6",
+    "baileys": "^6.7.21",
     "chalk": "^5.0.0",
     "cheerio": "^1.1.2",
     "file-type": "^17.1.1",
