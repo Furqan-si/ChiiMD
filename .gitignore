@@ -3,3 +3,4 @@ sessions
 *.bak
 *.zip
 database.json
+push.sh
